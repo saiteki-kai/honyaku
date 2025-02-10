@@ -6,6 +6,10 @@ authors = ["saiteki-kai <giuseppe.magazu@gmail.com>"]
 license = "MIT"
 readme = "README.md"
 
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
+
 [tool.poetry.dependencies]
 python = "^3.12"
 datasets = "^3.2.0"
@@ -20,6 +24,11 @@ ipykernel = "^6.29.5"
 ipywidgets = "^8.1.5"
 seaborn = "^0.13.2"
 
-[build-system]
-requires = ["poetry-core"]
-build-backend = "poetry.core.masonry.api"
+[tool.ruff]
+line-length = 120
+exclude = ["metrics/metricx"]
+
+[tool.ruff.lint.isort]
+known-first-party = ["metrics"]
+known-third-party = ["metricx"]
+lines-after-imports = 2
