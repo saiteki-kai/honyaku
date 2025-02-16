@@ -75,7 +75,7 @@ def main(args: argparse.Namespace) -> None:
     end_time = time.perf_counter()
     logger.info(f"Inference finished. Took {end_time - start_time:.2f} seconds")
 
-    # save dataset with new field
+    # Save the dataset with the translated field added
     df[f"{args.field}_it"] = translations
     it_dataset = Dataset.from_pandas(df)
     it_dataset.to_parquet(str(out_filepath))
@@ -93,6 +93,7 @@ def parse_args():
     parser.add_argument("--dtype", type=str, required=False, default="bfloat16", help="Dtype of the model")
     parser.add_argument("--ngpus", type=int, required=False, default=1, help="Number of GPUs to use")
     parser.add_argument("--log-file", type=Path, default="logs/translation.log", help="Path to the log file")
+    parser.add_argument("--output-path", type=Path, default="outputs", help="Path to the output directory")
 
     return parser.parse_args()
 
