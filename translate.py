@@ -70,7 +70,7 @@ def main(args: argparse.Namespace) -> None:
         model,
         dataset[args.field],
         params=params,
-        preprocess=pre_process(model_name=model_name, src_lang="English", trg_lang="Italian"),
+        preprocess=pre_process(model_name=args.model_name, src_lang="English", trg_lang="Italian"),
         postprocess=post_process,
     )
     end_time = time.perf_counter()
@@ -109,13 +109,5 @@ if __name__ == "__main__":
     transformers.utils.logging.set_verbosity(logging.INFO)
     transformers.utils.logging.enable_default_handler()
     transformers.utils.logging.enable_explicit_format()
-
-    # TODO: arguments parsing
-
-    model_name = "LLaMAX/LLaMAX3-8B-Alpaca"
-    dtype = "float16"
-
-    dataset_name = "PKU-Alignment/BeaverTails"
-    split = "330k_train"
 
     main(args)
