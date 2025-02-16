@@ -38,7 +38,8 @@ def main(args: argparse.Namespace) -> None:
 
     out_filepath = (
         args.output_path
-        / hf_name_to_path(args.dataset_name + "-it")
+        / args.dataset_name.split("/")[-1]
+        / "translations"
         / hf_name_to_path(args.model_name)
         / f"{args.split}.parquet"
     )
