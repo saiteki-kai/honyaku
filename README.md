@@ -1,2 +1,3 @@
-# honyaku-it
-Machine translation and evaluation. English -> Italian
+# Honyaku
+
+Machine translation using vLLM and quality estimation models.
