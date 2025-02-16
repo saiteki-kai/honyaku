@@ -8,9 +8,9 @@ import numpy as np
 import yaml
 from datasets import Dataset, load_dataset
 
-from log import setup_logging
-from metrics.quality import load_quality_metric
-from utils import model_name_to_path
+from honyaku.data import hf_name_to_path
+from honyaku.logger import setup_logging
+from honyaku.metrics.quality import load_quality_metric
 
 
 logger = logging.getLogger(__name__)
@@ -31,10 +31,10 @@ def main(config: dict) -> None:
     logger.info(f"Splits: {splits}")
     logger.info(f"Fields: {fields}")
 
-    translators = [model_name_to_path(translator) for translator in translators]
+    translators = [hf_name_to_path(translator) for translator in translators]
 
-    scores_path = Path("outputs") / model_name_to_path(dataset_name) / "scores"
-    metric_path = scores_path / model_name_to_path(metric)
+    scores_path = Path("outputs") / hf_name_to_path(dataset_name) / "scores"
+    metric_path = scores_path / hf_name_to_path(metric)
 
     logger.info(f"Loading metric: {metric}")
     metric_model = load_quality_metric(metric, tokenizer_name=tokenizer_name)
@@ -57,7 +57,7 @@ def main(config: dict) -> None:
 
             score_dict = {}
             for field in fields:
-                score_field_path = split_path / f"{field['source']}_{model_name_to_path(metric)}.npy"
+                score_field_path = split_path / f"{field['source']}_{hf_name_to_path(metric)}.npy"
 
                 if score_field_path.exists():
                     logger.info(f"Skipping {field['source']} for {metric} as {score_field_path} already exists")

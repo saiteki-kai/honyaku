@@ -1,20 +1,8 @@
 from collections.abc import Callable
 
-from datasets import Dataset, DatasetDict, IterableDataset, IterableDatasetDict, load_dataset
+
 from vllm import LLM, CompletionOutput, SamplingParams
 from vllm.transformers_utils.tokenizer import AnyTokenizer
-
-
-def model_name_to_path(model_name: str) -> str:
-    """Converts a model name to a path-safe string."""
-    return model_name.replace("/", "__")
-
-
-def load_data(
-    dataset_name: str, split: str, config_name: str | None = None
-) -> Dataset | DatasetDict | IterableDataset | IterableDatasetDict:
-    """Load dataset from huggingface"""
-    return load_dataset(dataset_name, name=config_name, split=split)
 
 
 def load_model(model_name: str, dtype: str = "bfloat16", ngpus: int = 1) -> LLM:
@@ -47,6 +35,7 @@ def generate(
     return [postprocess(req.outputs[0]) if postprocess else req.outputs[0].text for req in requests]
 
 
+# TODO: refactor system prompt
 def apply_chat_template(text: str | list[str], tokenizer: AnyTokenizer, system_prompt: str | None = None) -> list[str]:
     if isinstance(text, str):
         text = [text]

@@ -5,6 +5,7 @@ description = "Machine translation and evaluation"
 authors = ["saiteki-kai <giuseppe.magazu@gmail.com>"]
 license = "MIT"
 readme = "README.md"
+packages = [{ include = "honyaku" }]
 
 [build-system]
 requires = ["poetry-core"]
@@ -26,9 +27,9 @@ seaborn = "^0.13.2"
 
 [tool.ruff]
 line-length = 120
-exclude = ["metrics/metricx"]
+exclude = ["honyaku/metrics/metricx"]
 
 [tool.ruff.lint.isort]
-known-first-party = ["metrics"]
+known-first-party = ["honyaku"]
 known-third-party = ["metricx"]
 lines-after-imports = 2
