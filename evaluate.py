@@ -1,15 +1,14 @@
 import argparse
 import logging
-import sys
 import time
 import typing
 from pathlib import Path
 
-import datasets
 import numpy as np
 import yaml
 from datasets import Dataset, load_dataset
 
+from log import setup_logging
 from metrics.quality import load_quality_metric
 from utils import model_name_to_path
 
@@ -91,25 +90,6 @@ def load_split_dataset(dataset_name: str, config_name: str, split: str) -> Datas
     return typing.cast(Dataset, ds)
 
 
-def setup_logging(log_file: Path) -> None:
-    LOG_FORMAT = "[%(asctime)s] %(levelname)s: [%(process)s] %(name)s: %(message)s"
-
-    logging.basicConfig(level=logging.INFO, format=LOG_FORMAT)
-    file_handler = logging.FileHandler(log_file, mode="a", encoding="utf-8")
-    file_handler.setLevel(logging.INFO)
-    file_handler.setFormatter(logging.Formatter(LOG_FORMAT, datefmt="%Y-%m-%d %H:%M:%S"))
-    logger.addHandler(file_handler)
-
-    logger.setLevel(logging.INFO)
-
-    datasets.utils.logging.set_verbosity(logging.INFO)
-
-    def log_unhandled_exceptions(exc_type, exc_value, exc_traceback):
-        logger.error("Unhandled exception occurred", exc_info=(exc_type, exc_value, exc_traceback))
-
-    sys.excepthook = log_unhandled_exceptions
-
-
 def parse_args():
     parser = argparse.ArgumentParser(description="Run quality evaluation on a dataset")
     parser.add_argument("--config", type=str, required=True, help="Path to the configuration file")
@@ -125,6 +105,6 @@ def load_config(config_path):
 
 if __name__ == "__main__":
     args = parse_args()
-    setup_logging(args.log_file)
+    setup_logging(logger, args.log_file)
     config = load_config(args.config)
     main(config)
