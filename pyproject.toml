@@ -25,11 +25,47 @@ ipykernel = "^6.29.5"
 ipywidgets = "^8.1.5"
 seaborn = "^0.13.2"
 
+
+[tool.poetry.group.dev.dependencies]
+ruff = "^0.9.6"
+
 [tool.ruff]
 line-length = 120
+fix = true
+show-fixes = true
 exclude = ["honyaku/metrics/metricx"]
 
 [tool.ruff.lint.isort]
 known-first-party = ["honyaku"]
 known-third-party = ["metricx"]
 lines-after-imports = 2
+lines-between-types = 1
+combine-as-imports = true
+
+[tool.ruff.lint]
+select = [
+    "F",
+    "E",
+    "W",
+    "I",
+    "C90",
+    "UP",
+    "S",
+    "B",
+    "A",
+    "COM",
+    "C4",
+    "T10",
+    "RET",
+    "ARG",
+    "PIE",
+    "PGH",
+    "TRY",
+    "PLR",
+    "SIM",
+    "PTH",
+    "NPY",
+    "RUF",
+    "SLF001",
+]
+ignore = ["TRY003", "COM812"]

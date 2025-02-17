@@ -1,6 +1,5 @@
 from collections.abc import Callable
 
-
 from vllm import LLM, CompletionOutput, SamplingParams
 from vllm.transformers_utils.tokenizer import AnyTokenizer
 
@@ -41,8 +40,14 @@ def apply_chat_template(text: str | list[str], tokenizer: AnyTokenizer, system_p
         text = [text]
 
     if system_prompt:
-        messages = [[{"role": "system", "content": system_prompt}, {"role": "user", "content": t}] for t in text]
+        messages = [
+            [
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": t},
+            ]
+            for t in text
+        ]
     else:
         messages = [[{"role": "user", "content": t}] for t in text]
 
-    return tokenizer.apply_chat_template(messages, tokenize=False, add_generation_prompt=True)  # type: ignore
+    return tokenizer.apply_chat_template(messages, tokenize=False, add_generation_prompt=True)  # type: ignore  # noqa: PGH003

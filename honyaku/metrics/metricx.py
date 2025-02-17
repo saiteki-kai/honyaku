@@ -1,7 +1,9 @@
 import sys
+
 from pathlib import Path
 
 import torch
+
 from datasets import Dataset
 from torch.utils.data import DataLoader
 from tqdm import tqdm
@@ -84,7 +86,7 @@ class MetricX24(QualityMetric):
         data_collator = DataCollatorWithPadding(tokenizer=self._tokenizer, padding=True, pad_to_multiple_of=8)
 
         dataloader = DataLoader(
-            dataset,  # type: ignore
+            dataset,  # type: ignore  # noqa: PGH003
             batch_size=batch_size,
             collate_fn=data_collator,
             num_workers=2,

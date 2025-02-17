@@ -2,10 +2,12 @@ import argparse
 import logging
 import time
 import typing
+
 from pathlib import Path
 
 import numpy as np
 import yaml
+
 from datasets import Dataset, load_dataset
 
 from honyaku.data import hf_name_to_path
@@ -18,7 +20,7 @@ logger = logging.getLogger(__name__)
 
 def main(config: dict) -> None:
     metric = config["metric"]
-    tokenizer_name = config["tokenizer"] if "tokenizer" in config else None
+    tokenizer_name = config.get("tokenizer")
     dataset_name = config["dataset"]["name"]
     translators = config["translators"]
     splits = config["dataset"]["splits"]
@@ -49,8 +51,7 @@ def main(config: dict) -> None:
                 logger.info(f"Skipping {translator} for {metric} as {score_path} already exists")
                 score_dataset = Dataset.from_parquet(str(score_path))
                 continue
-            else:
-                score_path.parent.mkdir(parents=True, exist_ok=True)
+            score_path.parent.mkdir(parents=True, exist_ok=True)
 
             logger.info(f"Loading split: {split} for translator: {translator}")
             dataset = load_split_dataset(dataset_name, translator, split)
@@ -99,7 +100,7 @@ def parse_args():
 
 
 def load_config(config_path):
-    with open(config_path, "r") as f:
+    with config_path.open("r") as f:
         return yaml.safe_load(f)
 
 
