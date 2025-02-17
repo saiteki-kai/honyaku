@@ -1,4 +1,6 @@
+import typing
 from pathlib import Path
+
 from datasets import Dataset, DatasetDict, IterableDataset, IterableDatasetDict, load_dataset
 
 
@@ -14,6 +16,7 @@ def load_data(
 ) -> Dataset | DatasetDict | IterableDataset | IterableDatasetDict:
     """Load dataset from huggingface or local."""
     if isinstance(dataset_name_or_path, Path):
-        return load_dataset("parquet", data_dir=str(dataset_name_or_path.parent), name=config_name, split=split)
+        ds = Dataset.from_parquet(str(dataset_name_or_path))
+        return typing.cast(Dataset, ds)
 
     return load_dataset(dataset_name_or_path, name=config_name, split=split)
