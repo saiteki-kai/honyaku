@@ -1,4 +1,5 @@
 import sys
+import typing
 
 from pathlib import Path
 
@@ -29,7 +30,7 @@ class MetricX24(QualityMetric):
     _model: MT5ForRegression
     _tokenizer: T5Tokenizer
 
-    def __init__(self, model_name_or_path: str, tokenizer_name: str, device: str = "cuda") -> None:
+    def __init__(self, model_name_or_path: str, tokenizer_name: str) -> None:
         """Load the MetricX24 metric.
 
         This function loads the MetricX24 metric from a given name or path.
@@ -43,10 +44,7 @@ class MetricX24(QualityMetric):
         device : str, optional
             the device to use, by default "cuda"
         """
-        self._device = device
-
-        self._model = MT5ForRegression.from_pretrained(model_name_or_path, torch_dtype="auto")
-        self._model.to(device)
+        self._model = MT5ForRegression.from_pretrained(model_name_or_path, torch_dtype="auto", device_map="auto")
         self._model.eval()
 
         self._tokenizer = T5Tokenizer.from_pretrained(tokenizer_name)
@@ -58,6 +56,7 @@ class MetricX24(QualityMetric):
         contexts: list[str],
         references: list[str] | None = None,
         batch_size: int = 32,
+        smart_batching: bool = True,
     ) -> float | list[float]:
         """Score a batch of hypotheses, contexts and optionally references.
 
@@ -80,8 +79,16 @@ class MetricX24(QualityMetric):
             list of scores or a single score
         """
         inputs = self._prepare_inputs(hypotheses, contexts, references)
+
         data = self._tokenize(inputs)
+        data = typing.cast(dict[str, list[int]], data)
+        data["original_index"] = list(range(len(list(data["input_ids"]))))
+
         dataset = Dataset.from_dict(dict(data))
+
+        if smart_batching:
+            dataset = dataset.map(lambda example: {"length": len(example["input_ids"])})  # add lengths
+            dataset = dataset.sort("length", reverse=True)
 
         data_collator = DataCollatorWithPadding(tokenizer=self._tokenizer, padding=True, pad_to_multiple_of=8)
 
@@ -94,13 +101,29 @@ class MetricX24(QualityMetric):
             shuffle=False,
         )
 
-        scores = []
+        device = next(self._model.parameters()).device
+        scores = torch.zeros(len(list(data["original_index"])), device=device) if smart_batching else []
 
         for batch in tqdm(dataloader):
-            output = self._model(**batch.to(self._device))
-            scores.extend(output.predictions.detach().cpu().numpy())
+            indices = batch["original_index"]
+            batch = {k: v.to(device) for (k, v) in batch.items() if k not in ["original_index", "length"]}
 
-        return scores
+            output = self._model(**batch)
+            results = output.predictions.detach()
+
+            if smart_batching:
+                scores[indices] = results
+            else:
+                scores = typing.cast(list[torch.Tensor], scores)
+                scores.append(results)
+
+        if not smart_batching:
+            scores = typing.cast(list[torch.Tensor], scores)
+            scores = torch.cat(scores)
+
+        scores = typing.cast(torch.Tensor, scores)
+
+        return scores.cpu().tolist()
 
     def _tokenize(self, text: str | list[str]) -> BatchEncoding:
         """Tokenizes the input text.
