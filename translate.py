@@ -21,14 +21,6 @@ from honyaku.translation import pre_process
 logger = logging.getLogger(__name__)
 
 
-def post_process(output: CompletionOutput) -> str:
-    if output.finish_reason == "length":
-        logger.warning("Finished due to length")
-        logger.warning(output.text)
-
-    return output.text.strip()
-
-
 def main(args: argparse.Namespace) -> None:
     logger.info(f"Arguments: {args}")
 
@@ -82,6 +74,14 @@ def main(args: argparse.Namespace) -> None:
     it_dataset.to_parquet(str(out_filepath))
 
     logger.info(f"Dataset saved to {out_filepath}")
+
+
+def post_process(output: CompletionOutput) -> str:
+    if output.finish_reason == "length":
+        logger.warning("Finished due to length")
+        logger.warning(output.text)
+
+    return output.text.strip()
 
 
 def parse_args():
