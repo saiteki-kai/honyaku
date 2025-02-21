@@ -33,7 +33,7 @@ def main(args: argparse.Namespace) -> None:
     out_filepath = (
         args.output_path
         / args.dataset_name.split("/")[-1]
-        / "generated"
+        / "responses"
         / hf_name_to_path(args.model_name)
         / f"{args.split}.parquet"
     )
