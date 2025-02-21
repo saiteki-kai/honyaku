@@ -42,7 +42,7 @@ for i in "${!datasets[@]}"; do
         for field in "${fields[@]}"; do
             echo "Translating ${field} of \"${dataset}\" [${split}] with \"${name}\" on ${ngpus} GPUs"
 
-            python translate.py \
+            python run_translation.py \
                 --model-name "$name" \
                 --dataset-name $dataset \
                 --split $split \

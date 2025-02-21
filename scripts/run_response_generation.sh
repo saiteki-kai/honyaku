@@ -22,8 +22,10 @@ models=(
     "mistralai/Mistral-Nemo-Instruct-2407"
 )
 
+models=("Qwen/Qwen2.5-0.5B-Instruct")
+
 for model in "${models[@]}"; do
-    python generate.py \
+    python run_response_generation.py \
         --model-name "$model" \
         --dataset-name $DATASET_NAME \
         --split $DATASET_SPLIT \
