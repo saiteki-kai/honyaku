@@ -35,6 +35,7 @@ def pre_process(
 
         prompts = [translation_prompt(t, model_name, src_lang, trg_lang) for t in text]
 
+        # INFO: LLaMAX3 doesn't need chat template
         if "LLaMAX3" in model_name:
             return prompts
 
