@@ -7,6 +7,9 @@ from pathlib import Path
 def setup_logging(logger: logging.Logger, log_file: Path) -> None:
     LOG_FORMAT = "[%(asctime)s] %(levelname)s: [%(process)s] %(name)s: %(message)s"
 
+    if not log_file.exists():
+        log_file.parent.mkdir(parents=True, exist_ok=True)
+
     logging.basicConfig(level=logging.INFO, format=LOG_FORMAT)
     file_handler = logging.FileHandler(log_file, mode="a", encoding="utf-8")
     file_handler.setLevel(logging.INFO)
