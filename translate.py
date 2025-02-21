@@ -15,9 +15,9 @@ from datasets import Dataset
 from vllm import CompletionOutput, SamplingParams
 
 from honyaku.data import hf_name_to_path, load_data
-from honyaku.inference import generate, load_model
+from honyaku.inference.vllm import generate, load_model
 from honyaku.logger import setup_logging
-from honyaku.translation import pre_process
+from honyaku.translation.utils import pre_process
 
 
 logger = logging.getLogger(__name__)

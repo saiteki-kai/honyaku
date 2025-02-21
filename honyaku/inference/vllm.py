@@ -25,29 +25,12 @@ def generate(
     if isinstance(text, str):
         text = [text]
 
-    if preprocess:
+    if preprocess is not None:
         tokenizer = model.get_tokenizer()
         prompts = preprocess(text, tokenizer)
+    else:
+        prompts = text
 
     requests = model.generate(prompts, sampling_params=params)
 
     return [postprocess(req.outputs[0]) if postprocess else req.outputs[0].text for req in requests]
-
-
-# TODO: refactor system prompt
-def apply_chat_template(text: str | list[str], tokenizer: AnyTokenizer, system_prompt: str | None = None) -> list[str]:
-    if isinstance(text, str):
-        text = [text]
-
-    if system_prompt:
-        messages = [
-            [
-                {"role": "system", "content": system_prompt},
-                {"role": "user", "content": t},
-            ]
-            for t in text
-        ]
-    else:
-        messages = [[{"role": "user", "content": t}] for t in text]
-
-    return tokenizer.apply_chat_template(messages, tokenize=False, add_generation_prompt=True)  # type: ignore  # noqa: PGH003
