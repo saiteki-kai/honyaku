@@ -1,19 +1,34 @@
 #!/bin/bash
 
-python generate.py \
-    --model_name "google/gemma-27b-it" \
-    --dataset_name "PKU-Alignment/BeaverTails-Evaluation" \
-    --split "test" \
-    --field "prompt" \
-    --dtype "bfloat16" \
-    --output_path "outputs" \
-    --log_file "logs/responses/gemma-27b-it.log"
+DATASET_NAME="PKU-Alignment/BeaverTails-Evaluation"
+DATASET_SPLIT="test"
 
-python generate.py \
-    --model_name "microsoft/phi-4" \
-    --dataset_name "PKU-Alignment/BeaverTails-Evaluation" \
-    --split "test" \
-    --field "prompt" \
-    --dtype "bfloat16" \
-    --output_path "outputs" \
-    --log_file "logs/responses/phi-4.log"
+models=(
+    # Gemma
+    "google/gemma-2-27b-it"
+    "google/gemma-2-9b-it"
+    # Phi
+    "microsoft/phi-4"
+    "microsoft/Phi-3.5-MoE-instruct"
+    "microsoft/Phi-3-medium-128k-instruct"
+    # Qwen
+    "Qwen/Qwen2.5-72B-Instruct"
+    "Qwen/Qwen2.5-32B-Instruct"
+    "Qwen/Qwen2.5-14B-Instruct"
+    "Qwen/Qwen2.5-7B-Instruct"
+    "Qwen/Qwen2.5-3B-Instruct"
+    # Mistral
+    "mistralai/Mistral-Small-24B-Instruct-2501"
+    "mistralai/Mistral-Nemo-Instruct-2407"
+)
+
+for model in "${models[@]}"; do
+    python generate.py \
+        --model_name "$model" \
+        --dataset-name $DATASET_NAME \
+        --split $DATASET_SPLIT \
+        --field "prompt" \
+        --dtype "bfloat16" \
+        --output_path "./outputs" \
+        --log_file "./logs/responses/${model}.log"
+done
