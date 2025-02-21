@@ -49,7 +49,7 @@ class MetricX24(QualityMetric):
 
         self._tokenizer = T5Tokenizer.from_pretrained(tokenizer_name)
 
-    @torch.no_grad()
+    @torch.inference_mode()
     def score(
         self,
         hypotheses: list[str],

@@ -25,7 +25,7 @@ class CometMetric(QualityMetric):
         self._model.eval()
         self._model.set_embedding_cache()
 
-    @torch.no_grad()
+    @torch.inference_mode()
     def score(
         self,
         hypotheses: list[str],
