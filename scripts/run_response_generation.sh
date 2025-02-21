@@ -1,5 +1,7 @@
 #!/bin/bash
 
+# Generate responses for BeaverTails evaluation dataset with different LLMs
+
 DATASET_NAME="PKU-Alignment/BeaverTails-Evaluation"
 DATASET_SPLIT="test"
 
