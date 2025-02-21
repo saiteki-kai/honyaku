@@ -1,3 +1,5 @@
+import os
+
 from typing import Callable
 
 import torch
@@ -14,18 +16,30 @@ from transformers import (
 
 type Tokenizer = PreTrainedTokenizer | PreTrainedTokenizerFast
 
+os.environ["TOKENIZERS_PARALLELISM"] = "false"
+torch.set_float32_matmul_precision("high")
 
-def load_model(model_name_or_path: str, dtype: str = "bfloat16") -> tuple[PreTrainedModel, Tokenizer]:
+
+def load_model(model_name_or_path: str, dtype: torch.dtype = torch.bfloat16) -> tuple[PreTrainedModel, Tokenizer]:
     """Load model and tokenizer from Hugging Face Hub"""
-    model = AutoModelForCausalLM.from_pretrained(model_name_or_path, dtype=dtype, device_map="auto")
     tokenizer = AutoTokenizer.from_pretrained(model_name_or_path)
+
+    model = AutoModelForCausalLM.from_pretrained(
+        model_name_or_path,
+        torch_dtype=dtype,
+        attn_implementation="flash_attention_2",
+        device_map="auto",
+    )
+
+    model.generation_config.cache_implementation = "static"
+    model.forward = torch.compile(model.forward, mode="reduce-overhead", fullgraph=True)
 
     return model, tokenizer
 
 
 @torch.inference_mode()
 def generate(  # noqa: PLR0913
-    model: PreTrainedModel,
+    model: PreTrainedModel | Callable[[PreTrainedModel], PreTrainedModel],
     tokenizer: Tokenizer,
     text: str | list[str],
     config: GenerationConfig,
@@ -67,20 +81,15 @@ def generate(  # noqa: PLR0913
         text = preprocess(text, tokenizer)
 
     inputs = tokenizer(text, return_tensors="pt", padding=True, truncation=True)
-    input_ids = inputs.input_ids.to(model.device)
+    inputs = inputs.to(model.device)
 
-    generated_ids = model.generate(**input_ids, generation_config=config)
+    generated_ids = model.generate(**inputs, generation_config=config)  # type: ignore  # noqa: PGH003
 
     if return_prompt:
         outputs = tokenizer.batch_decode(generated_ids, skip_special_tokens=True)
     else:
-        input_lengths = inputs.attention_mask.sum(dim=1)
-
-        outputs = []
-        for i in range(len(generated_ids)):
-            response_ids = generated_ids[i, input_lengths[i] :]
-            output = tokenizer.decode(response_ids, skip_special_tokens=True)
-            outputs.append(output)
+        generated_ids = [output_ids[len(input_ids) :] for input_ids, output_ids in zip(inputs.input_ids, generated_ids)]
+        outputs = tokenizer.batch_decode(generated_ids, skip_special_tokens=True, batch_size=1)
 
     if postprocess is not None:
         outputs = [postprocess(o) for o in outputs]

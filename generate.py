@@ -9,7 +9,6 @@ from pathlib import Path
 
 import datasets
 import pandas as pd
-import torch
 import transformers
 
 from datasets import Dataset
@@ -29,8 +28,6 @@ def main(args: argparse.Namespace) -> None:
 
     logger.info(f"Loading model {args.model_name}")
     model, tokenizer = load_model(args.model_name, args.dtype)
-    model = torch.compile(model, mode="reduce-overhead")
-    model = typing.cast(transformers.PreTrainedModel, model)
     logger.info("Model loaded")
 
     out_filepath = (
