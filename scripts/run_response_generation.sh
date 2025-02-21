@@ -24,11 +24,11 @@ models=(
 
 for model in "${models[@]}"; do
     python generate.py \
-        --model_name "$model" \
+        --model-name "$model" \
         --dataset-name $DATASET_NAME \
         --split $DATASET_SPLIT \
         --field "prompt" \
         --dtype "bfloat16" \
-        --output_path "./outputs" \
-        --log_file "./logs/responses/${model}.log"
+        --output-path "./outputs" \
+        --log-file "./logs/responses/${model}.log"
 done
