@@ -1,6 +1,6 @@
 import typing
 
-from honyaku.inference import AnyTokenizer, apply_chat_template
+from src.inference import AnyTokenizer, apply_chat_template
 
 
 def translation_prompt(input_text: str, model_name: str, src_lang: str = "English", trg_lang: str = "Italian") -> str:

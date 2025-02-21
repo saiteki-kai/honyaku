@@ -14,10 +14,10 @@ import transformers
 from datasets import Dataset
 from transformers import GenerationConfig
 
-from honyaku.data import hf_name_to_path, load_data
-from honyaku.inference import AnyTokenizer, apply_chat_template
-from honyaku.inference.transformers import generate, load_model
-from honyaku.logger import setup_logging
+from src.data import hf_name_to_path, load_data
+from src.inference import AnyTokenizer, apply_chat_template
+from src.inference.transformers import generate, load_model
+from src.logger import setup_logging
 
 
 logger = logging.getLogger(__name__)

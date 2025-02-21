@@ -3,7 +3,7 @@ import torch
 from comet import download_model, load_from_checkpoint
 from comet.models import CometModel
 
-from honyaku.metrics.metric import QualityMetric
+from src.metrics.metric import QualityMetric
 
 
 class CometMetric(QualityMetric):

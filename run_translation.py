@@ -14,10 +14,10 @@ import transformers
 from datasets import Dataset
 from vllm import CompletionOutput, SamplingParams
 
-from honyaku.data import hf_name_to_path, load_data
-from honyaku.inference.vllm import generate, load_model
-from honyaku.logger import setup_logging
-from honyaku.translation.utils import pre_process
+from src.data import hf_name_to_path, load_data
+from src.inference.vllm import generate, load_model
+from src.logger import setup_logging
+from src.translation.utils import pre_process
 
 
 logger = logging.getLogger(__name__)

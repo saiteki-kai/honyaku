@@ -1,11 +1,11 @@
 [tool.poetry]
-name = "honyaku-it"
+name = "honyaku"
 version = "0.1.0"
 description = "Machine translation and evaluation"
 authors = ["saiteki-kai <giuseppe.magazu@gmail.com>"]
 license = "MIT"
 readme = "README.md"
-packages = [{ include = "honyaku" }]
+packages = [{ include = "src" }]
 
 [build-system]
 requires = ["poetry-core"]
@@ -34,10 +34,10 @@ ruff = "^0.9.6"
 line-length = 120
 fix = true
 show-fixes = true
-exclude = ["honyaku/metrics/metricx"]
+exclude = ["src/metrics/metricx"]
 
 [tool.ruff.lint.isort]
-known-first-party = ["honyaku"]
+known-first-party = ["src"]
 known-third-party = ["metricx"]
 lines-after-imports = 2
 lines-between-types = 1

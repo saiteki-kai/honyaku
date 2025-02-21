@@ -10,9 +10,9 @@ import yaml
 
 from datasets import Dataset, load_dataset
 
-from honyaku.data import hf_name_to_path
-from honyaku.logger import setup_logging
-from honyaku.metrics.quality import load_quality_metric
+from src.data import hf_name_to_path
+from src.logger import setup_logging
+from src.metrics.quality import load_quality_metric
 
 
 logger = logging.getLogger(__name__)

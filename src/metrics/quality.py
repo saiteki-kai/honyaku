@@ -1,6 +1,6 @@
-from honyaku.metrics.comet import CometMetric
-from honyaku.metrics.metric import QualityMetric
-from honyaku.metrics.metricx import MetricX24
+from src.metrics.comet import CometMetric
+from src.metrics.metric import QualityMetric
+from src.metrics.metricx import MetricX24
 
 
 def load_quality_metric(model_name_or_path: str, tokenizer_name: str | None = None) -> QualityMetric:

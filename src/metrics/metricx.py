@@ -11,7 +11,7 @@ from tqdm import tqdm
 from transformers import BatchEncoding, T5Tokenizer
 from transformers.data.data_collator import DataCollatorWithPadding
 
-from honyaku.metrics.metric import QualityMetric
+from src.metrics.metric import QualityMetric
 
 
 # add the git submodule to the path
