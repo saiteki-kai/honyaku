@@ -18,7 +18,8 @@ transformers = "^4.48.3"
 accelerate = "^1.3.0"
 tqdm = "^4.67.1"
 unbabel-comet = "^2.2.4"
-vllm = "^0.7.2"
+torch = "2.5.1"
+vllm = "^0.7.3"
 
 [tool.poetry.group.notebook.dependencies]
 ipykernel = "^6.29.5"
