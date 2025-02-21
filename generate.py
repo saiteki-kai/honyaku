@@ -76,6 +76,7 @@ def main(args: argparse.Namespace) -> None:
     end_time = time.perf_counter()
     logger.info(f"Generation finished. Took {end_time - start_time:.2f} seconds")
 
+    # TODO: define the output schema (prompt, response, category) or just the response
     # Save the dataset with the responses
     df["response"] = responses
     out_dataset = Dataset.from_pandas(df)
