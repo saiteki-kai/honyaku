@@ -99,7 +99,10 @@ def parse_args():
     return parser.parse_args()
 
 
-def load_config(config_path):
+def load_config(config_path: Path | str) -> dict:
+    if not isinstance(config_path, Path):
+        config_path = Path(config_path)
+
     with config_path.open("r") as f:
         return yaml.safe_load(f)
 
