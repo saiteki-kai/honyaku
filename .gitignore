@@ -169,3 +169,11 @@ cython_debug/
 
 # PyPI configuration file
 .pypirc
+
+# IDE
+.vscode/
+.ruff_cache/
+
+# Project Folders
+outputs/
+logs/
