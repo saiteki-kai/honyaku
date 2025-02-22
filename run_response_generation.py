@@ -12,7 +12,7 @@ import pandas as pd
 import transformers
 
 from datasets import Dataset
-from transformers import GenerationConfig
+from transformers import GenerationConfig, set_seed
 
 from src.data import hf_name_to_path, load_data
 from src.inference import AnyTokenizer, apply_chat_template
@@ -25,6 +25,8 @@ logger = logging.getLogger(__name__)
 
 def main(args: argparse.Namespace) -> None:
     logger.info(f"Arguments: {args}")
+
+    set_seed(args.seed)
 
     logger.info(f"Loading model {args.model_name}")
     model, tokenizer = load_model(args.model_name, args.dtype)
@@ -107,6 +109,7 @@ def parse_args():
     parser.add_argument("--system-prompt", type=str, default=None, help="System prompt for the model")
     parser.add_argument("--log-file", type=Path, default="logs/translation.log", help="Path to the log file")
     parser.add_argument("--output-path", type=Path, default="outputs", help="Path to the output directory")
+    parser.add_argument("--seed", type=int, required=False, default=42, help="Seed for reproducibility")
 
     return parser.parse_args()
 
