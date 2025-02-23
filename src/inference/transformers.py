@@ -89,7 +89,7 @@ def generate(  # noqa: PLR0913
         outputs = tokenizer.batch_decode(generated_ids, skip_special_tokens=True)
     else:
         generated_ids = [output_ids[len(input_ids) :] for input_ids, output_ids in zip(inputs.input_ids, generated_ids)]
-        outputs = tokenizer.batch_decode(generated_ids, skip_special_tokens=True, batch_size=1)
+        outputs = tokenizer.batch_decode(generated_ids, skip_special_tokens=True)
 
     if postprocess is not None:
         outputs = [postprocess(o) for o in outputs]
