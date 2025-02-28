@@ -65,6 +65,7 @@ def main(args: argparse.Namespace) -> None:
         eos_token_id=model_config.eos_token_id,
         pad_token_id=model_config.pad_token_id,
         cache_implementation=model_config.cache_implementation,
+        repetition_penalty=args.repetition_penalty,
     )
 
     # TODO: refactor to support file input (e.g. [Path | str] argument or system_prompt_path)
@@ -119,6 +120,7 @@ def parse_args():
     parser.add_argument("--seed", type=int, required=False, default=42, help="Seed for reproducibility")
     parser.add_argument("--batch-size", type=int, required=False, default=8, help="Batch size for generation")
     parser.add_argument("--max-length", type=int, required=False, default=2048, help="Max number of tokens to generate")
+    parser.add_argument("--repetition-penalty", type=int, required=False, default=1.0, help="Repetition penalty")
 
     return parser.parse_args()
 
