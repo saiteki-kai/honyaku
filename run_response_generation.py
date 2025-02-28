@@ -8,7 +8,6 @@ import typing
 from pathlib import Path
 
 import datasets
-import pandas as pd
 import transformers
 
 from datasets import Dataset
@@ -53,10 +52,20 @@ def main(args: argparse.Namespace) -> None:
         logger.error(f"Field '{args.field}' does not exist")
         sys.exit(1)
 
-    df = dataset.to_pandas()
-    df = typing.cast(pd.DataFrame, df)
+    model_config = GenerationConfig.from_pretrained(args.model_name)
+    logger.info(f"BOS token ID: {model_config.bos_token_id}")
+    logger.info(f"EOS token ID: {model_config.eos_token_id}")
+    logger.info(f"PAD token ID: {model_config.pad_token_id}")
 
-    config = GenerationConfig(do_sample=False, max_new_tokens=1024)
+    config = GenerationConfig(
+        do_sample=False,
+        max_length=args.max_length,
+        max_new_tokens=args.max_length,
+        bos_token_id=model_config.bos_token_id,
+        eos_token_id=model_config.eos_token_id,
+        pad_token_id=model_config.pad_token_id,
+        cache_implementation=model_config.cache_implementation,
+    )
 
     # TODO: refactor to support file input (e.g. [Path | str] argument or system_prompt_path)
     system_prompt = args.system_prompt
@@ -76,11 +85,8 @@ def main(args: argparse.Namespace) -> None:
     end_time = time.perf_counter()
     logger.info(f"Generation finished. Took {end_time - start_time:.2f} seconds")
 
-    # TODO: define the output schema (prompt, response, category) or just the response
-    # Save the dataset with the responses
-    df["response"] = responses
-    out_dataset = Dataset.from_pandas(df)
-    out_dataset.to_parquet(str(out_filepath))
+    dataset.add_column("response", responses)  # type: ignore  # noqa: PGH003
+    dataset.to_parquet(str(out_filepath))
 
     logger.info(f"Dataset saved to {out_filepath}")
 
@@ -112,6 +118,7 @@ def parse_args():
     parser.add_argument("--output-path", type=Path, default="outputs", help="Path to the output directory")
     parser.add_argument("--seed", type=int, required=False, default=42, help="Seed for reproducibility")
     parser.add_argument("--batch-size", type=int, required=False, default=8, help="Batch size for generation")
+    parser.add_argument("--max-length", type=int, required=False, default=2048, help="Max number of tokens to generate")
 
     return parser.parse_args()
 
