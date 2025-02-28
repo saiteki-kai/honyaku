@@ -40,11 +40,14 @@ def load_model(model_name_or_path: str, dtype: torch.dtype = torch.bfloat16) -> 
 
     # model.forward = torch.compile(model.forward, mode="reduce-overhead", fullgraph=True)
 
-    # TODO: refactor just checking if a pad token is already set
+    # TODO: refactor for more generic handling
     if "Mistral" in model_name_or_path or "Ministral" in model_name_or_path:
         tokenizer.pad_token = "<pad>"  # noqa: S105
         tokenizer.pad_token_id = tokenizer.convert_tokens_to_ids("<pad>")
         model.config.pad_token_id = tokenizer.pad_token_id
+
+    elif tokenizer.pad_token is None:
+        tokenizer.pad_token = tokenizer.eos_token
 
     return model, tokenizer
 
