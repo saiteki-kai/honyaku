@@ -4,6 +4,7 @@ from typing import Callable
 
 import torch
 
+from tqdm import tqdm
 from transformers import (
     AutoModelForCausalLM,
     AutoTokenizer,
@@ -46,6 +47,7 @@ def generate(  # noqa: PLR0913
     preprocess: Callable[[str | list[str], Tokenizer], list[str]] | None = None,
     postprocess: Callable[[str], str] | None = None,
     return_prompt: bool = False,
+    batch_size: int = 1,
 ) -> str | list[str]:
     """Generate text using an Hugging Face model
 
@@ -68,6 +70,8 @@ def generate(  # noqa: PLR0913
         Postprocessing function for the output text, by default None
     return_prompt : bool, optional
         Whether to return the prompt in the output, by default False
+    batch_size : int, optional
+        The batch size for processing, by default 1
 
     Returns
     -------
@@ -77,19 +81,28 @@ def generate(  # noqa: PLR0913
     if isinstance(text, str):
         text = [text]
 
-    if preprocess is not None:
-        text = preprocess(text, tokenizer)
+    outputs = []
 
-    inputs = tokenizer(text, return_tensors="pt", padding=True, truncation=True)
-    inputs = inputs.to(model.device)
+    for i in tqdm(range(0, len(text), batch_size), desc="Processing batches", unit="batch"):
+        batch = text[i : i + batch_size]
 
-    generated_ids = model.generate(**inputs, generation_config=config)  # type: ignore  # noqa: PGH003
+        if preprocess is not None:
+            batch = preprocess(batch, tokenizer)
 
-    if return_prompt:
-        outputs = tokenizer.batch_decode(generated_ids, skip_special_tokens=True)
-    else:
-        generated_ids = [output_ids[len(input_ids) :] for input_ids, output_ids in zip(inputs.input_ids, generated_ids)]
-        outputs = tokenizer.batch_decode(generated_ids, skip_special_tokens=True)
+        inputs = tokenizer(batch, return_tensors="pt", padding=True, truncation=True, max_length=1024)
+        inputs = inputs.to(model.device)
+
+        generated_ids = model.generate(**inputs, generation_config=config, pad_token_id=tokenizer.pad_token_id)  # type: ignore  # noqa: PGH003
+
+        if return_prompt:
+            batch_outputs = tokenizer.batch_decode(generated_ids, skip_special_tokens=True)
+        else:
+            generated_ids = [
+                output_ids[len(input_ids) :] for input_ids, output_ids in zip(inputs.input_ids, generated_ids)
+            ]
+            batch_outputs = tokenizer.batch_decode(generated_ids, skip_special_tokens=True)
+
+        outputs.extend(batch_outputs)
 
     if postprocess is not None:
         outputs = [postprocess(o) for o in outputs]

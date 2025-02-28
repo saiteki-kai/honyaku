@@ -71,6 +71,7 @@ def main(args: argparse.Namespace) -> None:
         config=config,
         preprocess=pre_process(system_prompt=system_prompt),
         postprocess=post_process,
+        batch_size=args.batch_size,
     )
     end_time = time.perf_counter()
     logger.info(f"Generation finished. Took {end_time - start_time:.2f} seconds")
@@ -110,6 +111,7 @@ def parse_args():
     parser.add_argument("--log-file", type=Path, default="logs/translation.log", help="Path to the log file")
     parser.add_argument("--output-path", type=Path, default="outputs", help="Path to the output directory")
     parser.add_argument("--seed", type=int, required=False, default=42, help="Seed for reproducibility")
+    parser.add_argument("--batch-size", type=int, required=False, default=8, help="Batch size for generation")
 
     return parser.parse_args()
 
