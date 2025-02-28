@@ -24,17 +24,27 @@ torch.set_float32_matmul_precision("high")
 
 def load_model(model_name_or_path: str, dtype: torch.dtype = torch.bfloat16) -> tuple[PreTrainedModel, Tokenizer]:
     """Load model and tokenizer from Hugging Face Hub"""
-    tokenizer = AutoTokenizer.from_pretrained(model_name_or_path)
+    tokenizer = AutoTokenizer.from_pretrained(
+        model_name_or_path,
+        padding_side="left",
+        trust_remote_code=True,
+    )
 
     model = AutoModelForCausalLM.from_pretrained(
         model_name_or_path,
         torch_dtype=dtype,
         attn_implementation="flash_attention_2" if is_flash_attn_2_available() else "sdpa",
         device_map="auto",
+        trust_remote_code=True,
     )
 
-    model.generation_config.cache_implementation = "static"
-    model.forward = torch.compile(model.forward, mode="reduce-overhead", fullgraph=True)
+    # model.forward = torch.compile(model.forward, mode="reduce-overhead", fullgraph=True)
+
+    # TODO: refactor just checking if a pad token is already set
+    if "Mistral" in model_name_or_path or "Ministral" in model_name_or_path:
+        tokenizer.pad_token = "<pad>"  # noqa: S105
+        tokenizer.pad_token_id = tokenizer.convert_tokens_to_ids("<pad>")
+        model.config.pad_token_id = tokenizer.pad_token_id
 
     return model, tokenizer
 
