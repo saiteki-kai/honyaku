@@ -106,7 +106,7 @@ def generate(  # noqa: PLR0913
         inputs = tokenizer(batch, return_tensors="pt", padding=True, truncation=True, max_length=1024)
         inputs = inputs.to(model.device)
 
-        generated_ids = model.generate(**inputs, generation_config=config, pad_token_id=tokenizer.pad_token_id)  # type: ignore  # noqa: PGH003
+        generated_ids = model.generate(**inputs, generation_config=config)  # type: ignore  # noqa: PGH003
 
         if return_prompt:
             batch_outputs = tokenizer.batch_decode(generated_ids, skip_special_tokens=True)
