@@ -13,6 +13,7 @@ from transformers import (
     PreTrainedTokenizer,
     PreTrainedTokenizerFast,
 )
+from transformers.utils import is_flash_attn_2_available
 
 
 type Tokenizer = PreTrainedTokenizer | PreTrainedTokenizerFast
@@ -28,7 +29,7 @@ def load_model(model_name_or_path: str, dtype: torch.dtype = torch.bfloat16) -> 
     model = AutoModelForCausalLM.from_pretrained(
         model_name_or_path,
         torch_dtype=dtype,
-        attn_implementation="flash_attention_2",
+        attn_implementation="flash_attention_2" if is_flash_attn_2_available() else "sdpa",
         device_map="auto",
     )
 
