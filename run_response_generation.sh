@@ -25,7 +25,7 @@ models=(
 )
 
 for model in "${models[@]}"; do
-    python run_response_generation.py \
+    python generate.py \
         --model-name "$model" \
         --dataset-name $DATASET_NAME \
         --split $DATASET_SPLIT \

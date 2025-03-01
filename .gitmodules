@@ -1,3 +1,0 @@
-[submodule "src/metrics/metricx"]
-	path = src/metrics/metricx
-	url = https://github.com/google-research/metricx/
