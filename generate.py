@@ -92,7 +92,7 @@ def main(args: argparse.Namespace) -> None:
     end_time = time.perf_counter()
     logger.info(f"Generation finished. Took {end_time - start_time:.2f} seconds")
 
-    dataset.add_column("response", responses)  # type: ignore  # noqa: PGH003
+    dataset = dataset.add_column("response", responses)  # type: ignore  # noqa: PGH003
     dataset.to_parquet(str(out_filepath))
 
     logger.info(f"Dataset saved to {out_filepath}")
