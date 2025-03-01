@@ -78,7 +78,7 @@ def main(args: argparse.Namespace) -> None:
         eos_token_id=model_config.eos_token_id,
         pad_token_id=model_config.pad_token_id,
         cache_implementation=model_config.cache_implementation,
-        repetition_penalty=args.repetition_penalty,
+        repetition_penalty=model_config.repetition_penalty,
     )
 
     logger.info("Generation started")
@@ -126,7 +126,7 @@ def generate(  # noqa: PLR0913
     input_ids = tokenizer.apply_chat_template(messages, tokenize=True, add_generation_prompt=True, return_tensors="pt")
     input_ids = typing.cast(torch.Tensor, input_ids)
 
-    generated_ids = model.generate(input_ids, generation_config=config)
+    generated_ids = model.generate(input_ids.to(model.device), generation_config=config)
 
     if include_prompt:
         outputs = tokenizer.batch_decode(generated_ids, skip_special_tokens=skip_special_tokens)
@@ -187,7 +187,6 @@ def parse_args():
     parser.add_argument("--output-path", type=Path, default="outputs", help="Path to the output directory")
     parser.add_argument("--seed", type=int, required=False, default=42, help="Seed for reproducibility")
     parser.add_argument("--max-length", type=int, required=False, default=2048, help="Max number of tokens to generate")
-    parser.add_argument("--repetition-penalty", type=int, required=False, default=1.0, help="Repetition penalty")
 
     return parser.parse_args()
 
