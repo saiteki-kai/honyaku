@@ -8,16 +8,15 @@ import typing
 from pathlib import Path
 
 import datasets
-import pandas as pd
 import transformers
 
 from datasets import Dataset
-from vllm import CompletionOutput, SamplingParams
+from tqdm import tqdm
+from transformers import GenerationConfig, set_seed
 
 from src.data import hf_name_to_path, load_data
-from src.inference.vllm import generate, load_model
+from src.inference import generate, load_model
 from src.logger import setup_logging
-from src.translation.utils import pre_process
 
 
 logger = logging.getLogger(__name__)
@@ -26,22 +25,26 @@ logger = logging.getLogger(__name__)
 def main(args: argparse.Namespace) -> None:
     logger.info(f"Arguments: {args}")
 
+    set_seed(args.seed)
+
     logger.info(f"Loading model {args.model_name}")
-    model = load_model(args.model_name, args.dtype, args.ngpus)
+    model, tokenizer = load_model(args.model_name, args.dtype)
     logger.info("Model loaded")
 
     out_filepath = (
         args.output_path
         / args.dataset_name.split("/")[-1]
-        / "translations"
+        / "responses"
         / hf_name_to_path(args.model_name)
         / f"{args.split}.parquet"
     )
 
     if out_filepath.exists():
         dataset = load_data(out_filepath, config_name=args.config_name, split=args.split)
+        logger.info(f"Dataset loaded from {out_filepath}")
     else:
         dataset = load_data(args.dataset_name, config_name=args.config_name, split=args.split)
+        logger.info(f"Dataset loaded from huggingface ({args.dataset_name})")
 
     dataset = typing.cast(Dataset, dataset)
 
@@ -49,54 +52,52 @@ def main(args: argparse.Namespace) -> None:
         logger.error(f"Field '{args.field}' does not exist")
         sys.exit(1)
 
-    if args.field.endswith("_it"):
-        logger.warning(f"Field '{args.field}' already exists. Skipping translation.")
-        sys.exit(0)
+    model_config = GenerationConfig.from_pretrained(args.model_name)
+    logger.info(f"BOS token ID: {model_config.bos_token_id}")
+    logger.info(f"EOS token ID: {model_config.eos_token_id}")
+    logger.info(f"PAD token ID: {model_config.pad_token_id}")
 
-    df = dataset.to_pandas()
-    df = typing.cast(pd.DataFrame, df)
-
-    params = SamplingParams(temperature=0.0, max_tokens=1024)
-
-    logger.info("Inference started")
-    start_time = time.perf_counter()
-    translations = generate(
-        model,
-        dataset[args.field],
-        params=params,
-        preprocess=pre_process(model_name=args.model_name, src_lang="English", trg_lang="Italian"),
-        postprocess=post_process,
+    config = GenerationConfig(
+        do_sample=False,
+        max_length=args.max_length,
+        max_new_tokens=args.max_length,
+        bos_token_id=model_config.bos_token_id,
+        eos_token_id=model_config.eos_token_id,
+        pad_token_id=model_config.pad_token_id,
+        cache_implementation=model_config.cache_implementation,
+        repetition_penalty=args.repetition_penalty,
     )
-    end_time = time.perf_counter()
-    logger.info(f"Inference finished. Took {end_time - start_time:.2f} seconds")
 
-    # Save the dataset with the translated field added
-    df[f"{args.field}_it"] = translations
-    it_dataset = Dataset.from_pandas(df)
-    it_dataset.to_parquet(str(out_filepath))
+    logger.info("Generation started")
+    start_time = time.perf_counter()
+
+    responses = []
+    for prompt in tqdm(dataset[args.field], desc="Generating responses"):
+        response = generate(model, tokenizer, prompt, config=config)
+        responses.append(response)
+
+    end_time = time.perf_counter()
+    logger.info(f"Generation finished. Took {end_time - start_time:.2f} seconds")
+
+    dataset.add_column("response", responses)  # type: ignore  # noqa: PGH003
+    dataset.to_parquet(str(out_filepath))
 
     logger.info(f"Dataset saved to {out_filepath}")
 
 
-def post_process(output: CompletionOutput) -> str:
-    if output.finish_reason == "length":
-        logger.warning("Finished due to length")
-        logger.warning(output.text)
-
-    return output.text.strip()
-
-
 def parse_args():
-    parser = argparse.ArgumentParser(description="Translate a dataset with an Hugging Face model")
+    parser = argparse.ArgumentParser(description="Generate responses for a dataset using an Hugging Face model")
     parser.add_argument("--model-name", type=str, required=True, help="Model name or path")
     parser.add_argument("--dataset-name", type=str, required=True, help="Dataset name or path")
     parser.add_argument("--split", type=str, required=True, help="Split name of the dataset")
     parser.add_argument("--config-name", type=str, required=False, default=None, help="Config name of the dataset")
-    parser.add_argument("--field", type=str, required=True, help="Field to translate")
+    parser.add_argument("--field", type=str, required=True, help="Input text field")
     parser.add_argument("--dtype", type=str, required=False, default="bfloat16", help="Dtype of the model")
-    parser.add_argument("--ngpus", type=int, required=False, default=1, help="Number of GPUs to use")
     parser.add_argument("--log-file", type=Path, default="logs/translation.log", help="Path to the log file")
     parser.add_argument("--output-path", type=Path, default="outputs", help="Path to the output directory")
+    parser.add_argument("--seed", type=int, required=False, default=42, help="Seed for reproducibility")
+    parser.add_argument("--max-length", type=int, required=False, default=2048, help="Max number of tokens to generate")
+    parser.add_argument("--repetition-penalty", type=int, required=False, default=1.0, help="Repetition penalty")
 
     return parser.parse_args()
 
