@@ -11,10 +11,10 @@ import datasets
 import transformers
 
 from datasets import Dataset
+from tqdm import tqdm
 from transformers import GenerationConfig, set_seed
 
 from src.data import hf_name_to_path, load_data
-from src.inference import AnyTokenizer, apply_chat_template
 from src.inference.transformers import generate, load_model
 from src.logger import setup_logging
 
@@ -68,21 +68,14 @@ def main(args: argparse.Namespace) -> None:
         repetition_penalty=args.repetition_penalty,
     )
 
-    # TODO: refactor to support file input (e.g. [Path | str] argument or system_prompt_path)
-    system_prompt = args.system_prompt
-    prompts = dataset[args.field]
-
     logger.info("Generation started")
     start_time = time.perf_counter()
-    responses = generate(
-        model,
-        tokenizer,
-        prompts,
-        config=config,
-        preprocess=pre_process(system_prompt=system_prompt),
-        postprocess=post_process,
-        batch_size=args.batch_size,
-    )
+
+    responses = []
+    for prompt in tqdm(dataset[args.field], desc="Generating responses"):
+        response = generate(model, tokenizer, prompt, config=config)
+        responses.append(response)
+
     end_time = time.perf_counter()
     logger.info(f"Generation finished. Took {end_time - start_time:.2f} seconds")
 
@@ -90,20 +83,6 @@ def main(args: argparse.Namespace) -> None:
     dataset.to_parquet(str(out_filepath))
 
     logger.info(f"Dataset saved to {out_filepath}")
-
-
-def pre_process(system_prompt: str | None = None) -> typing.Callable[[list[str] | str, AnyTokenizer], list[str]]:
-    def _pre_process(text: list[str] | str, tokenizer: AnyTokenizer) -> list[str]:
-        if isinstance(text, str):
-            text = [text]
-
-        return apply_chat_template(text, tokenizer, system_prompt=system_prompt)
-
-    return _pre_process
-
-
-def post_process(output: str) -> str:
-    return output.strip()
 
 
 def parse_args():
@@ -114,11 +93,9 @@ def parse_args():
     parser.add_argument("--config-name", type=str, required=False, default=None, help="Config name of the dataset")
     parser.add_argument("--field", type=str, required=True, help="Input text field")
     parser.add_argument("--dtype", type=str, required=False, default="bfloat16", help="Dtype of the model")
-    parser.add_argument("--system-prompt", type=str, default=None, help="System prompt for the model")
     parser.add_argument("--log-file", type=Path, default="logs/translation.log", help="Path to the log file")
     parser.add_argument("--output-path", type=Path, default="outputs", help="Path to the output directory")
     parser.add_argument("--seed", type=int, required=False, default=42, help="Seed for reproducibility")
-    parser.add_argument("--batch-size", type=int, required=False, default=8, help="Batch size for generation")
     parser.add_argument("--max-length", type=int, required=False, default=2048, help="Max number of tokens to generate")
     parser.add_argument("--repetition-penalty", type=int, required=False, default=1.0, help="Repetition penalty")
 
