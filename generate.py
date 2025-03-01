@@ -1,23 +1,36 @@
 import argparse
 import logging
 import logging.handlers
+import os
 import sys
 import time
 import typing
 
 from pathlib import Path
+from typing import Callable
 
 import datasets
+import torch
 import transformers
 
-from datasets import Dataset
+from datasets import Dataset, DatasetDict, IterableDataset, IterableDatasetDict, load_dataset
 from tqdm import tqdm
-from transformers import GenerationConfig, set_seed
+from transformers import (
+    AutoModelForCausalLM,
+    AutoTokenizer,
+    GenerationConfig,
+    PreTrainedModel,
+    PreTrainedTokenizer,
+    PreTrainedTokenizerFast,
+    set_seed,
+)
+from transformers.utils import is_flash_attn_2_available
 
-from src.data import hf_name_to_path, load_data
-from src.inference import generate, load_model
-from src.logger import setup_logging
 
+type Tokenizer = PreTrainedTokenizer | PreTrainedTokenizerFast
+
+os.environ["TOKENIZERS_PARALLELISM"] = "false"
+torch.set_float32_matmul_precision("high")
 
 logger = logging.getLogger(__name__)
 
@@ -83,6 +96,83 @@ def main(args: argparse.Namespace) -> None:
     dataset.to_parquet(str(out_filepath))
 
     logger.info(f"Dataset saved to {out_filepath}")
+
+
+def load_model(model_name_or_path: str, dtype: torch.dtype = torch.bfloat16) -> tuple[PreTrainedModel, Tokenizer]:
+    """Load model and tokenizer from Hugging Face Hub"""
+    tokenizer = AutoTokenizer.from_pretrained(model_name_or_path, trust_remote_code=True)
+
+    model = AutoModelForCausalLM.from_pretrained(
+        model_name_or_path,
+        torch_dtype=dtype,
+        attn_implementation="flash_attention_2" if is_flash_attn_2_available() else "sdpa",
+        device_map="auto",
+        trust_remote_code=True,
+    )
+
+    return model, tokenizer
+
+
+@torch.inference_mode()
+def generate(  # noqa: PLR0913
+    model: PreTrainedModel | Callable[[PreTrainedModel], PreTrainedModel],
+    tokenizer: Tokenizer,
+    prompt: str | list[str],
+    config: GenerationConfig,
+    include_prompt: bool = False,
+    skip_special_tokens: bool = True,
+) -> str | list[str]:
+    messages = [{"role": "user", "content": prompt}]
+    input_ids = tokenizer.apply_chat_template(messages, tokenize=True, add_generation_prompt=True, return_tensors="pt")
+    input_ids = typing.cast(torch.Tensor, input_ids)
+
+    generated_ids = model.generate(input_ids, generation_config=config)
+
+    if include_prompt:
+        outputs = tokenizer.batch_decode(generated_ids, skip_special_tokens=skip_special_tokens)
+    else:
+        generated_ids = [output_ids[len(input_ids) :] for input_ids, output_ids in zip(input_ids, generated_ids)]
+        outputs = tokenizer.batch_decode(generated_ids, skip_special_tokens=skip_special_tokens)
+
+    return outputs[0]
+
+
+def hf_name_to_path(model_name: str) -> str:
+    """Converts huggingface name to a path-safe string."""
+    return model_name.replace("/", "__")
+
+
+def load_data(
+    dataset_name_or_path: Path | str,
+    split: str,
+    config_name: str | None = None,
+) -> Dataset | DatasetDict | IterableDataset | IterableDatasetDict:
+    """Load dataset from huggingface or local."""
+    if isinstance(dataset_name_or_path, Path):
+        ds = Dataset.from_parquet(str(dataset_name_or_path))
+        return typing.cast(Dataset, ds)
+
+    return load_dataset(dataset_name_or_path, name=config_name, split=split)
+
+
+def setup_logging(logger: logging.Logger, log_file: Path) -> None:
+    LOG_FORMAT = "[%(asctime)s] %(levelname)s: [%(process)s] %(name)s: %(message)s"
+
+    if not log_file.exists():
+        log_file.parent.mkdir(parents=True, exist_ok=True)
+
+    logging.basicConfig(level=logging.INFO, format=LOG_FORMAT)
+    file_handler = logging.FileHandler(log_file, mode="a", encoding="utf-8")
+    file_handler.setLevel(logging.INFO)
+    file_handler.setFormatter(logging.Formatter(LOG_FORMAT, datefmt="%Y-%m-%d %H:%M:%S"))
+    logger.addHandler(file_handler)
+
+    logger.setLevel(logging.INFO)
+
+    def log_unhandled_exceptions(exc_type, exc_value, exc_traceback):
+        logger.error("Unhandled exception occurred", exc_info=(exc_type, exc_value, exc_traceback))
+
+    sys.excepthook = log_unhandled_exceptions
 
 
 def parse_args():
