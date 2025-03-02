@@ -92,6 +92,8 @@ def main(args: argparse.Namespace) -> None:
     end_time = time.perf_counter()
     logger.info(f"Generation finished. Took {end_time - start_time:.2f} seconds")
 
+    if "response" in dataset.features:
+        dataset = dataset.remove_columns("response")
     dataset = dataset.add_column("response", responses)  # type: ignore  # noqa: PGH003
     dataset.to_parquet(str(out_filepath))
 
